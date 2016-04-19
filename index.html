@@ -1,0 +1,178 @@
+<html>
+<head>
+  <!-- complete your HTML head here -->
+  <title>Lab_D3</title>
+  <script src="bower_components/jQuery/dist/jQuery.min.js"></script>
+  <script src="bower_components/d3/d3.min.js"></script>
+  <script type="text/javascript" src="main.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <style>
+    .axis path,
+    .axis line{
+        fill: none;
+        stroke: black;
+        shape-rendering: crispEdges;
+    }
+    .axis text {
+        font-family: sans-serif;
+        font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+<h4 id="hovered">chevrolet chevelle malibu</h4>
+<div class="plot">
+  <svg></svg>
+</div>
+<br>
+<div class="ui">
+  <div>
+    <label>X-Axis</label>
+    <select id="sel-x">
+      <option value="mpg">mpg</option>
+      <option value="cyl">cylinders</option>
+      <option value="disp">displacement</option>
+      <option value="hp">horsepower</option>
+      <option value="weight">weight</option>
+      <option value="accl">acceleration</option>
+      <option value="year">model.year</option>
+    </select>
+    
+    <label>Y-Axis</label>
+    <select id="sel-y">
+      <option value="mpg">mpg</option>
+      <option value="cylinders">cylinders</option>
+      <option value="displacement">displacement</option>
+      <option value="horsepower">horsepower</option>
+      <option value="weight">weight</option>
+      <option value="accleleration">acceleration</option>
+      <option value="model.year">model.year</option>
+    </select>
+  </div>
+  <div>
+    <input id="mpg-min" type="text" value="0" size="10">
+    <input id="mpg-max" type="text" value="30" size="10">
+    <button id="update">Query MPG</button>
+  </div>
+</div>
+  <script type="text/javascript">
+    //config
+    var SVG = {
+      paddingBottom: 30,
+      paddingLeft: 30
+    }
+
+    //setup svg
+  	var margin = {top:20, right: 20, bottom: 30, left: 40},
+        width = 400 - margin.left -margin.right,
+        height = 300 - margin.top - margin.bottom,
+        svg = d3.select("svg")
+                .attr("width",width)
+                .attr("height",height)
+                .append("g");
+    // setup x 
+    //var xSelected = $("#sel-x option:selected").text();
+    var xValue = function(d) { return d.mpg;}, // data -> value
+    xScale = d3.scale.linear().range([0, width]), // value -> display
+    xMap = function(d) { return xScale(xValue(d)) + SVG.paddingLeft;}, // data -> display
+    xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+
+    // setup y 
+    //var ySelected = $("#sel-y option:selected").text();
+    var yValue = function(d) { return d.displacement;}, // data -> value
+    yScale = d3.scale.linear().range([height, 0]), // value -> display
+    yMap = function(d) { return yScale(yValue(d)) - SVG.paddingBottom;}, // data -> display
+    yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+    // setup fill color
+    var cValue = function(d) { return d.Manufacturer;},
+    color = d3.scale.category10();
+
+// add the tooltip area to the webpage
+var tooltip = d3.select("#hovered")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+
+    // load data
+    d3.csv("car.csv", function(error, data) {
+      
+      // change string (from CSV) into number format
+      data.forEach(function(d) {
+        d.xSelected = +d.xSelected;
+        d.ySelected = +d.ySelected;
+      });
+      // don't want dots overlapping axis, so add in buffer to data domain
+      xScale.domain([0, d3.max(data, xValue)+1]);
+      yScale.domain([0, d3.max(data, yValue)+1]);
+
+        // x-axis
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(" + SVG.paddingLeft + ", " + (height - SVG.paddingBottom) + ")")
+          .call(xAxis)
+        .append("text")
+          .attr("class", "label")
+          .attr("x", width)
+          .attr("y", -6)
+          .style("text-anchor", "end")
+          .text("x");
+          // y-axis
+      svg.append("g")
+          .attr("class", "y axis")
+          .attr("transform", "translate(" + SVG.paddingLeft + "," + (-SVG.paddingBottom) + ")")
+          .call(yAxis)
+        .append("text")
+          .attr("class", "label")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .text("y");
+          // draw dots
+        var dots = svg.selectAll(".dot")
+                        .data(data);
+
+          dots.enter()
+        .append("circle")
+          .attr("class", "dot")
+          .attr("r", 3.5)
+          .attr("cx", xMap)
+          .attr("cy", yMap)
+          .style("fill", function(d) { return color(cValue(d));}) 
+          .on("mouseover", function(d) {
+              tooltip.transition()
+                   .duration(200)
+                   .style("opacity", .9);
+              tooltip.html(d["name"] + "<br/>")
+                   .style("left", (d3.event.pageX + 5) + "px")
+                   .style("top", (d3.event.pageY - 28) + "px");
+          })
+          .on("mouseout", function(d) {
+              tooltip.transition()
+                   .duration(500)
+                   .style("opacity", 0);
+          });
+
+          dots.exit().remove();
+    })
+
+
+    $('#sel-x').change(function(){
+        var x = $('#sel-x').val();
+        var y = $('#sel-y').val();
+        draw(x, y);
+
+    });
+
+    $('#sel-y').change(function(){
+        var x = $('#sel-x').val();
+        var y = $('#sel-y').val();
+        draw(x, y);
+
+    });
+
+  </script>
+</body>
+</html>
+
